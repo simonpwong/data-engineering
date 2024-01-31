@@ -25,6 +25,8 @@ Which tag has the following text? - *Automatically remove the container when it 
 - `--rmc`
 - `--rm`
 
+### Answer: `--rm`
+
 
 ## Question 2. Understanding docker first run 
 
@@ -38,6 +40,7 @@ What is version of the package *wheel* ?
 - 23.0.1
 - 58.1.0
 
+### Answer: 0.42.0
 
 # Prepare Postgres
 
@@ -66,6 +69,16 @@ Remember that `lpep_pickup_datetime` and `lpep_dropoff_datetime` columns are in 
 - 15859
 - 89009
 
+### Answer: 15612
+
+```SQL
+SELECT COUNT(*)
+FROM green_taxi_trips
+WHERE DATE(lpep_pickup_datetime) = '2019-09-18'
+AND DATE(lpep_dropoff_datetime) = '2019-09-18';
+```
+
+
 ## Question 4. Largest trip for each day
 
 Which was the pick up day with the largest trip distance
@@ -75,6 +88,15 @@ Use the pick up time for your calculations.
 - 2019-09-16
 - 2019-09-26
 - 2019-09-21
+
+### Answer: 2019-09-26
+
+```SQL
+SELECT DATE(lpep_pickup_datetime) as date, MAX(trip_distance) as trip_distance
+FROM green_taxi_trips
+GROUP BY date
+ORDER BY trip_distance desc LIMIT 1;
+```
 
 
 ## Question 5. Three biggest pick up Boroughs
@@ -87,6 +109,22 @@ Which were the 3 pick up Boroughs that had a sum of total_amount superior to 500
 - "Bronx" "Brooklyn" "Manhattan"
 - "Bronx" "Manhattan" "Queens" 
 - "Brooklyn" "Queens" "Staten Island"
+
+### Answer: "Brooklyn" "Manhattan" "Queens"
+
+```SQL
+SELECT Borough, total_amount
+FROM (
+	SELECT tz."Borough" AS Borough, SUM(gt."total_amount") AS total_amount
+	FROM green_taxi_trips gt
+	INNER JOIN taxi_zone tz ON gt."PULocationID" = tz."LocationID"
+	WHERE DATE(gt.lpep_pickup_datetime) = '2019-09-18'
+	AND tz."Borough" <> 'Unknown'
+	GROUP BY tz."Borough"
+) a
+WHERE total_amount > 50000
+ORDER BY total_amount DESC;
+```
 
 
 ## Question 6. Largest tip
@@ -101,6 +139,18 @@ Note: it's not a typo, it's `tip` , not `trip`
 - JFK Airport
 - Long Island City/Queens Plaza
 
+### Answer: JFK Airport
+
+```SQL
+SELECT do_tz."Zone" as Zone, MAX(gt."tip_amount") as tip_amount
+FROM green_taxi_trips gt
+INNER JOIN taxi_zone pu_tz ON gt."PULocationID" = pu_tz."LocationID"
+INNER JOIN taxi_zone do_tz ON gt."DOLocationID" = do_tz."LocationID"
+WHERE pu_tz."Zone" = 'Astoria'
+AND date_trunc('month', gt.lpep_pickup_datetime) = '2019-09-01'
+GROUP BY Zone
+ORDER BY tip_amount DESC LIMIT 1;
+```
 
 
 ## Terraform
